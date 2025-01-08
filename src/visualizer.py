@@ -86,21 +86,20 @@ class HeatTrajectoryVisualizer:
         glow = plt.Circle((initial_x, initial_y), radius=1, color="yellow", alpha=0.3)
         plt.gca().add_patch(glow)
 
-        # Customize tick labels to center at initial position
-        ax = plt.gca()
-        x_ticks = ax.get_xticks()
-        y_ticks = ax.get_yticks()
+        ticks = np.arange(self.m)
 
-        # Set fixed ticks and adjust labels
-        ax.set_xticks(x_ticks)
-        ax.set_xticklabels([int(abs(tick - initial_x)) for tick in x_ticks])
-        ax.set_yticks(y_ticks)
-        ax.set_yticklabels([int(abs(tick - initial_y)) for tick in y_ticks])
+        # Calculate relative distances from heat source
+        x_labels = [abs(int(tick - initial_x)) for tick in ticks]
+        y_labels = [abs(int(tick - initial_y)) for tick in ticks]
+
+        # Set ticks and labels
+        plt.xticks(ticks, x_labels)
+        plt.yticks(ticks, y_labels)
 
         # Customize the plot
         # plt.title('Heat Particle Trajectories with Circular Safe Zone')
-        plt.xlabel("X Relatif")
-        plt.ylabel("Y Relatif")
+        plt.xlabel("X Relatif (3 km/tick)")
+        plt.ylabel("Y Relatif (3 km/tick)")
         plt.grid(True, linestyle="--", alpha=0.3)
         plt.legend()
 

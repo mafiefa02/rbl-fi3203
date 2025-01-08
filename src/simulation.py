@@ -6,6 +6,17 @@ import numpy as np
 
 
 def initialize_simulation(grid_size, num_particles, seed=0):
+    """
+    Initialize the simulation environment with a grid and particles.
+
+    Args:
+        grid_size (int): Size of the square grid (m x m)
+        num_particles (int): Number of particles to simulate
+        seed (int): Random seed for reproducibility
+
+    Returns:
+        tuple: Grid size, random key, initial grid state, particle array, empty history list
+    """
     m = grid_size
     master_key = random.key(seed)
 
@@ -33,6 +44,18 @@ def initialize_simulation(grid_size, num_particles, seed=0):
 
 
 def random_walk(key, particle, grid_size, particles):
+    """
+    Perform one step of random walk for a single particle.
+
+    Args:
+        key: JAX random key for this step
+        particle: Single particle state (x, y, opacity)
+        grid_size: Size of the simulation grid
+        particles: Array of all particles (unused but kept for vmap compatibility)
+
+    Returns:
+        array: Updated particle state [new_x, new_y, new_opacity]
+    """
     key1, key2 = random.split(key)
     px, py, opacity = particle
 
@@ -49,6 +72,20 @@ def random_walk(key, particle, grid_size, particles):
 
 
 def simulate(grid_size, num_particles, num_iterations, master_key, grid, particles):
+    """
+    Run the complete simulation for all particles over multiple iterations.
+
+    Args:
+        grid_size: Size of the simulation grid
+        num_particles: Number of particles to simulate
+        num_iterations: Number of simulation steps
+        master_key: JAX random key
+        grid: Initial grid state
+        particles: Initial particle states
+
+    Returns:
+        tuple: Final particle states, history of all states, final grid state
+    """
     history = []
     for _ in range(num_iterations):
         # Generate keys for all particles
@@ -70,6 +107,16 @@ def simulate(grid_size, num_particles, num_iterations, master_key, grid, particl
 
 
 def update_grid(particles, grid_size):
+    """
+    Update the grid state based on current particle positions and opacities.
+
+    Args:
+        particles: Array of current particle states
+        grid_size: Size of the simulation grid
+
+    Returns:
+        array: Updated grid with accumulated particle opacities
+    """
     grid = jnp.zeros((grid_size, grid_size))
 
     # Accumulate particle opacities in grid cells
@@ -81,6 +128,16 @@ def update_grid(particles, grid_size):
 
 
 def accumulate_trajectories(trajectories, grid_size):
+    """
+    Create a grid showing the accumulated presence of particles over time.
+
+    Args:
+        trajectories: History of all particle states
+        grid_size: Size of the simulation grid
+
+    Returns:
+        array: Grid showing total accumulated particle presence
+    """
     accumulation_grid = np.zeros((grid_size, grid_size))
     for particles in trajectories:
         for px, py, opacity in particles:
@@ -90,7 +147,16 @@ def accumulate_trajectories(trajectories, grid_size):
 
 
 def find_unsafe_radius(accumulation_grid, center):
-    """Find the approximate radius of the unsafe zone based on statistical threshold"""
+    """
+    Calculate the radius of the unsafe zone based on particle density.
+
+    Args:
+        accumulation_grid: Grid of accumulated particle presence
+        center: Coordinates of the initial position
+
+    Returns:
+        float: Radius of the unsafe zone
+    """
     threshold = np.mean(accumulation_grid) + np.std(accumulation_grid)
 
     # Create binary mask of unsafe zone
@@ -114,7 +180,18 @@ def find_unsafe_radius(accumulation_grid, center):
 
 
 def plot_heatmap(accumulation_grid, initial_position, grid_size, figsize=(10, 8)):
-    """Plot the heatmap with the initial position marked and circular safe zone"""
+    """
+    Create visualization of the simulation results.
+
+    Args:
+        accumulation_grid: Grid of accumulated particle presence
+        initial_position: Starting coordinates of particles
+        grid_size: Size of the simulation grid
+        figsize: Size of the output figure
+
+    Returns:
+        Figure: Matplotlib figure object
+    """
     plt.figure(figsize=figsize)
 
     # Create heatmap of trajectories
@@ -144,7 +221,7 @@ def plot_heatmap(accumulation_grid, initial_position, grid_size, figsize=(10, 8)
         fill=False,
         linestyle="--",
         linewidth=2,
-        label=f"Zona Berbahaya (<{unsafe_radius:.2f})",
+        label=f"Zona Berbahaya (<{unsafe_radius:.2f} tick)",
     )
     plt.gca().add_patch(unsafe_circle)
 
@@ -159,20 +236,19 @@ def plot_heatmap(accumulation_grid, initial_position, grid_size, figsize=(10, 8)
     glow = plt.Circle((initial_x, initial_y), radius=1, color="yellow", alpha=0.3)
     plt.gca().add_patch(glow)
 
-    # Customize tick labels to center at initial position
-    ax = plt.gca()
-    x_ticks = ax.get_xticks()
-    y_ticks = ax.get_yticks()
+    ticks = np.arange(grid_size)
 
-    # Set fixed ticks and adjust labels
-    ax.set_xticks(x_ticks)
-    ax.set_xticklabels([int(abs(tick - initial_x)) for tick in x_ticks])
-    ax.set_yticks(y_ticks)
-    ax.set_yticklabels([int(abs(tick - initial_y)) for tick in y_ticks])
+    # Calculate relative distances from heat source
+    x_labels = [abs(int(tick - initial_x)) for tick in ticks]
+    y_labels = [abs(int(tick - initial_y)) for tick in ticks]
+
+    # Set ticks and labels
+    plt.xticks(ticks, x_labels)
+    plt.yticks(ticks, y_labels)
 
     # Customize the plot
-    plt.xlabel("X Relatif")
-    plt.ylabel("Y Relatif")
+    plt.xlabel("X Relatif (3 km/tick)")
+    plt.ylabel("Y Relatif (3 km/tick)")
     plt.grid(True, linestyle="--", alpha=0.3)
     plt.legend()
 
