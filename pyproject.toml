@@ -1,0 +1,13 @@
+[project]
+name = "rbl-fi3203"
+version = "0.1.0"
+description = "Research Based Learning (RBL) project for the course Simulation and Modelling of Physical Systems (FI3203)"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "ipykernel>=6.29.5",
+    "jax>=0.4.38",
+    "matplotlib>=3.10.0",
+    "numpy>=2.2.1",
+    "ruff>=0.8.6",
+]
